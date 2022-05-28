@@ -78,7 +78,7 @@ mod bridge_transfer_ontract {
             transferable: String,
             transferable_amount: Option<Balance>,
         ) {
-            build_call::<DefaultEnvironment>()
+            let call_params = build_call::<DefaultEnvironment>()
                 .call_type(
                     Call::new()
                         .callee(to_contract) // specify the callee
@@ -94,8 +94,9 @@ mod bridge_transfer_ontract {
                     .push_arg(transferable_amount.clone()), // Fourth arg
                 )
                 .returns::<()>() // No return
-                .fire()
-                .unwrap();
+                .params();
+
+            Self::env().invoke_contract(&call_params).unwrap();
 
             Self::env().emit_event(BridgeOut {
                 from_contract,
