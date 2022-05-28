@@ -78,7 +78,6 @@ mod bridge_transfer_ontract {
                 .call_type(
                     Call::new()
                         .callee(recipient) // specify the callee
-                        .gas_limit(0), // specify the gas limit, similar to gas limit in EVM
                 )
                 .exec_input(
                     ExecutionInput::new(Selector::new(
