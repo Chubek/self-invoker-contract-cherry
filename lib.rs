@@ -20,7 +20,7 @@ mod bridge_transfer_ontract {
         call::{build_call, Call, ExecutionInput, Selector},
         DefaultEnvironment,
     };
-
+    use ink_lang::selector_bytes;
     use ink_prelude::string::String;
 
     /// Bridge-In Event
@@ -80,7 +80,7 @@ mod bridge_transfer_ontract {
                 )
                 .exec_input(
                     ExecutionInput::new(Selector::new(
-                        [0x44, 0xff, 0x23, 0x12], // this is the selector of bridge_in
+                        selector_bytes!("bridge_in"), // this is the selector of bridge_in
                     ))
                     .push_arg(token_address) // First arg
                     .push_arg(target_chain.clone()) // Second arg
@@ -103,7 +103,7 @@ mod bridge_transfer_ontract {
         /// Notice that we have given is a selector.
         /// As you'll shortly see we use this selector in
         /// our invoke function.
-        #[ink(message, selector = 0x44ff2312)]
+        #[ink(message)]
         pub fn bridge_in(&self, token_address: AccountId, from_chain: String, amount: Balance) {
             // The "to" contract is us! self.env().account_id() returns this very contract's
             // token.
