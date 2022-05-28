@@ -108,7 +108,7 @@ mod bridge_transfer_ontract {
             build_call::<DefaultEnvironment>()
                 .call_type(
                     Call::new()
-                        .callee(from_contract) // specify the callee
+                        .callee(to_contract) // specify the callee
                         .gas_limit(0), // specify the gas limit, similar to gas limit in EVM
                 )
                 .exec_input(
@@ -150,7 +150,7 @@ mod bridge_transfer_ontract {
             );
 
             build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(from_contract).gas_limit(0))
+                .call_type(Call::new().callee(to_contract).gas_limit(0))
                 .exec_input(
                     ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
                         .push_arg(from_contract)
@@ -181,7 +181,7 @@ mod bridge_transfer_ontract {
             let to_contract = self.env().account_id();
 
             build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(from_contract).gas_limit(0))
+                .call_type(Call::new().callee(to_contract).gas_limit(0))
                 .exec_input(
                     ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
                         .push_arg(from_contract)
@@ -208,7 +208,7 @@ mod bridge_transfer_ontract {
             let from_contract = to_contract.clone();
 
             build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(from_contract).gas_limit(0))
+                .call_type(Call::new().callee(to_contract).gas_limit(0))
                 .exec_input(
                     ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
                         .push_arg(from_contract)
