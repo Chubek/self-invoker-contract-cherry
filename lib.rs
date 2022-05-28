@@ -76,8 +76,7 @@ mod bridge_transfer_ontract {
         ) {
             let call_params = build_call::<DefaultEnvironment>()
                 .call_type(
-                    Call::new()
-                        .callee(recipient) // specify the callee
+                    Call::new().callee(recipient), // specify the callee
                 )
                 .exec_input(
                     ExecutionInput::new(Selector::new(
@@ -135,49 +134,6 @@ mod bridge_transfer_ontract {
                 Self::env().is_contract(&recipient),
                 "Can only pass contract AccoundIDs..."
             );
-
-            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
-        }
-
-        /// As we said this is identical to the other function except it does not
-        /// take a token_address token and uses the current contract's address.
-        #[ink(message)]
-        pub fn bridge_out_from_self(
-            &self,
-            recipient: AccountId,
-            target_chain: String,
-            amount: Balance,
-        ) {
-            let token_address = self.env().account_id();
-
-            assert!(
-                Self::env().is_contract(&recipient),
-                "Can only pass contract AccoundIDs..."
-            );
-
-            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
-        }
-
-        /// As we said this is identical to the other function except it does not
-        /// take a recipient token and uses the current contract's address.
-        #[ink(message)]
-        pub fn bridge_out_cherry_to_self(
-            &self,
-            token_address: AccountId,
-            target_chain: String,
-            amount: Balance,
-        ) {
-            let recipient = self.env().account_id();
-
-            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
-        }
-
-        /// As we said this is identical to the other function except it does not
-        /// take any addresses and just invokes itself.
-        #[ink(message)]
-        pub fn bridge_out_cherry_from_to_self(&self, target_chain: String, amount: Balance) {
-            let recipient = self.env().account_id();
-            let token_address = recipient.clone();
 
             Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
         }
