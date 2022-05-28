@@ -20,8 +20,10 @@ mod bridge_transfer_ontract {
         call::{build_call, Call, ExecutionInput, Selector},
         DefaultEnvironment,
     };
-    use ink_lang::selector_bytes;
+
     use ink_prelude::string::String;
+
+    type Result = core::result::Result<(), ()>;
 
     /// Bridge-In Event
     /// From -> To transfering Transferable originating From Chain of amount Transferable Amount
@@ -79,12 +81,10 @@ mod bridge_transfer_ontract {
                     Call::new().callee(recipient), // specify the callee
                 )
                 .exec_input(
-                    ExecutionInput::new(Selector::new(
-                        selector_bytes!("bridge_in"), // this is the selector of bridge_in
-                    ))
-                    .push_arg(token_address) // First arg
-                    .push_arg(target_chain.clone()) // Second arg
-                    .push_arg(amount.clone()), // Fourth arg
+                    ExecutionInput::new(Selector::new([1, 1, 1, 1]))
+                        .push_arg(token_address) // First arg
+                        .push_arg(target_chain.clone()) // Second arg
+                        .push_arg(amount.clone()), // Fourth arg
                 )
                 .returns::<()>() // No return
                 .params();
@@ -103,8 +103,13 @@ mod bridge_transfer_ontract {
         /// Notice that we have given is a selector.
         /// As you'll shortly see we use this selector in
         /// our invoke function.
-        #[ink(message)]
-        pub fn bridge_in(&self, token_address: AccountId, from_chain: String, amount: Balance) {
+        #[ink(message, selector = 16843009)]
+        pub fn bridge_in(
+            &self,
+            token_address: AccountId,
+            from_chain: String,
+            amount: Balance,
+        ) -> Result {
             // The "to" contract is us! self.env().account_id() returns this very contract's
             // token.
             let recipient = self.env().account_id();
@@ -116,6 +121,8 @@ mod bridge_transfer_ontract {
                 from_chain,
                 amount,
             });
+
+            Ok(())
         }
 
         /// This is the 'main' bridge out function. It takes a custom 'from' contract.
@@ -128,7 +135,7 @@ mod bridge_transfer_ontract {
             recipient: AccountId,
             target_chain: String,
             amount: Balance,
-        ) {
+        ) -> Result {
             // We make sure the address we are invoking is a contract and not a user
             assert!(
                 Self::env().is_contract(&recipient),
@@ -136,6 +143,8 @@ mod bridge_transfer_ontract {
             );
 
             Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
+
+            Ok(())
         }
     }
 }
