@@ -28,27 +28,25 @@ mod bridge_transfer_ontract {
     #[ink(event)]
     pub struct BridgeIn {
         #[ink(topic)]
-        from_contract: AccountId,
+        token_address: AccountId,
         #[ink(topic)]
-        to_contract: AccountId,
-        transferable: String,
+        recipient: AccountId,
         #[ink(topic)]
         from_chain: String,
-        transferable_amount: Option<Balance>,
+        amount: Balance,
     }
     /// Bridge-Out Event
-    /// Identical Fields to Bridge-In; 
+    /// Identical Fields to Bridge-In;
     /// from_chain in bridge-in is target-chain in bridge-out.
     #[ink(event)]
     pub struct BridgeOut {
         #[ink(topic)]
-        from_contract: AccountId,
+        token_address: AccountId,
         #[ink(topic)]
-        to_contract: AccountId,
-        transferable: String,
+        recipient: AccountId,
         #[ink(topic)]
         target_chain: String,
-        transferable_amount: Option<Balance>,
+        amount: Balance,
     }
 
     /// We don't really need a storage do we?
@@ -71,26 +69,24 @@ mod bridge_transfer_ontract {
         /// functions it just makes sense ot make a convinience function!
         /// This function also emits bridge-out event.
         fn build_and_fire_call_and_emit(
-            from_contract: AccountId,
-            to_contract: AccountId,
+            token_address: AccountId,
+            recipient: AccountId,
             target_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
+            amount: Balance,
         ) {
             let call_params = build_call::<DefaultEnvironment>()
                 .call_type(
                     Call::new()
-                        .callee(to_contract) // specify the callee
+                        .callee(recipient) // specify the callee
                         .gas_limit(0), // specify the gas limit, similar to gas limit in EVM
                 )
                 .exec_input(
                     ExecutionInput::new(Selector::new(
                         [0x44, 0xff, 0x23, 0x12], // this is the selector of bridge_in
                     ))
-                    .push_arg(from_contract) // First arg
+                    .push_arg(token_address) // First arg
                     .push_arg(target_chain.clone()) // Second arg
-                    .push_arg(transferable.clone()) // Third arg
-                    .push_arg(transferable_amount.clone()), // Fourth arg
+                    .push_arg(amount.clone()), // Fourth arg
                 )
                 .returns::<()>() // No return
                 .params();
@@ -98,11 +94,10 @@ mod bridge_transfer_ontract {
             Self::env().invoke_contract(&call_params).unwrap();
 
             Self::env().emit_event(BridgeOut {
-                from_contract,
-                to_contract,
-                transferable,
+                token_address,
+                recipient,
                 target_chain,
-                transferable_amount,
+                amount,
             });
         }
 
@@ -111,120 +106,81 @@ mod bridge_transfer_ontract {
         /// As you'll shortly see we use this selector in
         /// our invoke function.
         #[ink(message, selector = 0x44ff2312)]
-        pub fn bridge_in(
-            &self,
-            from_contract: AccountId,
-            from_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
-        ) {
+        pub fn bridge_in(&self, token_address: AccountId, from_chain: String, amount: Balance) {
             // The "to" contract is us! self.env().account_id() returns this very contract's
             // token.
-            let to_contract = self.env().account_id();
+            let recipient = self.env().account_id();
 
             // Now we emit the in-event in peace.
             Self::env().emit_event(BridgeIn {
-                from_contract,
-                to_contract,
-                transferable,
+                token_address,
+                recipient,
                 from_chain,
-                transferable_amount,
+                amount,
             });
         }
 
         /// This is the 'main' bridge out function. It takes a custom 'from' contract.
-        /// The other one uses the current contract's token as it's from_contract token.
+        /// The other one uses the current contract's token as it's token_address token.
         /// We also take the target chain and what we wish to transfer.
         #[ink(message)]
         pub fn bridge_out(
             &self,
-            from_contract: AccountId,
-            to_contract: AccountId,
+            token_address: AccountId,
+            recipient: AccountId,
             target_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
+            amount: Balance,
         ) {
             // We make sure the address we are invoking is a contract and not a user
             assert!(
-                Self::env().is_contract(&to_contract),
+                Self::env().is_contract(&recipient),
                 "Can only pass contract AccoundIDs..."
             );
 
-            Self::build_and_fire_call_and_emit(
-                from_contract,
-                to_contract,
-                target_chain,
-                transferable,
-                transferable_amount,
-            );
+            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
         }
 
         /// As we said this is identical to the other function except it does not
-        /// take a from_contract token and uses the current contract's address.
+        /// take a token_address token and uses the current contract's address.
         #[ink(message)]
         pub fn bridge_out_from_self(
             &self,
-            to_contract: AccountId,
+            recipient: AccountId,
             target_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
+            amount: Balance,
         ) {
-            let from_contract = self.env().account_id();
+            let token_address = self.env().account_id();
 
             assert!(
-                Self::env().is_contract(&to_contract),
+                Self::env().is_contract(&recipient),
                 "Can only pass contract AccoundIDs..."
             );
 
-            Self::build_and_fire_call_and_emit(
-                from_contract,
-                to_contract,
-                target_chain,
-                transferable,
-                transferable_amount,
-            );
+            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
         }
 
         /// As we said this is identical to the other function except it does not
-        /// take a to_contract token and uses the current contract's address.
+        /// take a recipient token and uses the current contract's address.
         #[ink(message)]
         pub fn bridge_out_cherry_to_self(
             &self,
-            from_contract: AccountId,
+            token_address: AccountId,
             target_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
+            amount: Balance,
         ) {
-            let to_contract = self.env().account_id();
+            let recipient = self.env().account_id();
 
-            Self::build_and_fire_call_and_emit(
-                from_contract,
-                to_contract,
-                target_chain,
-                transferable,
-                transferable_amount,
-            );
+            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
         }
 
         /// As we said this is identical to the other function except it does not
         /// take any addresses and just invokes itself.
         #[ink(message)]
-        pub fn bridge_out_cherry_from_to_self(
-            &self,
-            target_chain: String,
-            transferable: String,
-            transferable_amount: Option<Balance>,
-        ) {
-            let to_contract = self.env().account_id();
-            let from_contract = to_contract.clone();
+        pub fn bridge_out_cherry_from_to_self(&self, target_chain: String, amount: Balance) {
+            let recipient = self.env().account_id();
+            let token_address = recipient.clone();
 
-            Self::build_and_fire_call_and_emit(
-                from_contract,
-                to_contract,
-                target_chain,
-                transferable,
-                transferable_amount,
-            );
+            Self::build_and_fire_call_and_emit(token_address, recipient, target_chain, amount);
         }
     }
 }
