@@ -24,7 +24,7 @@ mod bridge_transfer_ontract {
     use ink_prelude::string::String;
 
     /// Bridge-In Event
-    /// From -> To transfering Transferable originating From Chain
+    /// From -> To transfering Transferable originating From Chain of amount Transferable Amount
     #[ink(event)]
     pub struct BridgeIn {
         #[ink(topic)]
@@ -34,6 +34,7 @@ mod bridge_transfer_ontract {
         transferable: String,
         #[ink(topic)]
         from_chain: String,
+        transferable_amount: Option<Balance>,
     }
     /// Bridge-Out Event
     /// Identical Fields to Bridge-In; except, the "from_contract" in
@@ -48,6 +49,7 @@ mod bridge_transfer_ontract {
         transferable: String,
         #[ink(topic)]
         target_chain: String,
+        transferable_amount: Option<Balance>,
     }
 
     /// We don't really need a storage do we?
@@ -74,6 +76,7 @@ mod bridge_transfer_ontract {
             to_contract: AccountId,
             target_chain: String,
             transferable: String,
+            transferable_amount: Option<Balance>,
         ) {
             build_call::<DefaultEnvironment>()
                 .call_type(
@@ -87,7 +90,8 @@ mod bridge_transfer_ontract {
                     ))
                     .push_arg(from_contract) // First arg
                     .push_arg(target_chain.clone()) // Second arg
-                    .push_arg(transferable.clone()), // Third arg
+                    .push_arg(transferable.clone()) // Third arg
+                    .push_arg(transferable_amount.clone()), // Fourth arg
                 )
                 .returns::<()>() // No return
                 .fire()
@@ -98,6 +102,7 @@ mod bridge_transfer_ontract {
                 to_contract,
                 transferable,
                 target_chain,
+                transferable_amount,
             });
         }
 
@@ -111,6 +116,7 @@ mod bridge_transfer_ontract {
             from_contract: AccountId,
             from_chain: String,
             transferable: String,
+            transferable_amount: Option<Balance>,
         ) {
             // The "to" contract is us! self.env().account_id() returns this very contract's
             // token.
@@ -122,6 +128,7 @@ mod bridge_transfer_ontract {
                 to_contract,
                 transferable,
                 from_chain,
+                transferable_amount,
             });
         }
 
@@ -135,6 +142,7 @@ mod bridge_transfer_ontract {
             to_contract: AccountId,
             target_chain: String,
             transferable: String,
+            transferable_amount: Option<Balance>,
         ) {
             // We make sure the address we are invoking is a contract and not a user
             assert!(
@@ -147,6 +155,7 @@ mod bridge_transfer_ontract {
                 to_contract,
                 target_chain,
                 transferable,
+                transferable_amount,
             );
         }
 
@@ -158,6 +167,7 @@ mod bridge_transfer_ontract {
             to_contract: AccountId,
             target_chain: String,
             transferable: String,
+            transferable_amount: Option<Balance>,
         ) {
             let from_contract = self.env().account_id();
 
@@ -171,6 +181,7 @@ mod bridge_transfer_ontract {
                 to_contract,
                 target_chain,
                 transferable,
+                transferable_amount,
             );
         }
 
@@ -182,6 +193,7 @@ mod bridge_transfer_ontract {
             from_contract: AccountId,
             target_chain: String,
             transferable: String,
+            transferable_amount: Option<Balance>,
         ) {
             let to_contract = self.env().account_id();
 
@@ -190,13 +202,19 @@ mod bridge_transfer_ontract {
                 to_contract,
                 target_chain,
                 transferable,
+                transferable_amount,
             );
         }
 
         /// As we said this is identical to the other function except it does not
         /// take any addresses and just invokes itself.
         #[ink(message)]
-        pub fn bridge_out_cherry_from_to_self(&self, target_chain: String, transferable: String) {
+        pub fn bridge_out_cherry_from_to_self(
+            &self,
+            target_chain: String,
+            transferable: String,
+            transferable_amount: Option<Balance>,
+        ) {
             let to_contract = self.env().account_id();
             let from_contract = to_contract.clone();
 
@@ -205,6 +223,7 @@ mod bridge_transfer_ontract {
                 to_contract,
                 target_chain,
                 transferable,
+                transferable_amount,
             );
         }
     }
