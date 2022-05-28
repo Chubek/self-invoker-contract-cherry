@@ -37,9 +37,8 @@ mod bridge_transfer_ontract {
         transferable_amount: Option<Balance>,
     }
     /// Bridge-Out Event
-    /// Identical Fields to Bridge-In; except, the "from_contract" in
-    /// bridge-in is the to_contract in bright-out.
-    /// Also from_chain in bridge-in is target-chain in bridge-out.
+    /// Identical Fields to Bridge-In; 
+    /// from_chain in bridge-in is target-chain in bridge-out.
     #[ink(event)]
     pub struct BridgeOut {
         #[ink(topic)]
