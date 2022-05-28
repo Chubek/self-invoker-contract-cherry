@@ -21,6 +21,8 @@ mod bridge_transfer_ontract {
         DefaultEnvironment,
     };
 
+    use ink_prelude::string::String;
+
     /// Bridge-In Event
     /// From -> To transfering Transferable originating From Chain
     #[ink(event)]
@@ -61,6 +63,42 @@ mod bridge_transfer_ontract {
         #[ink(constructor, payable)]
         pub fn new() -> Self {
             Self {}
+        }
+
+        /// Convinience function for building and firing events.
+        /// Since we are going to do the same thing across several
+        /// functions it just makes sense ot make a convinience function!
+        /// This function also emits bridge-out event.
+        fn build_and_fire_call_and_emit(
+            from_contract: AccountId,
+            to_contract: AccountId,
+            target_chain: String,
+            transferable: String,
+        ) {
+            build_call::<DefaultEnvironment>()
+                .call_type(
+                    Call::new()
+                        .callee(to_contract) // specify the callee
+                        .gas_limit(0), // specify the gas limit, similar to gas limit in EVM
+                )
+                .exec_input(
+                    ExecutionInput::new(Selector::new(
+                        [0x44, 0xff, 0x23, 0x12], // this is the selector of bridge_in
+                    ))
+                    .push_arg(from_contract) // First arg
+                    .push_arg(target_chain.clone()) // Second arg
+                    .push_arg(transferable.clone()), // Third arg
+                )
+                .returns::<()>() // No return
+                .fire()
+                .unwrap();
+
+            Self::env().emit_event(BridgeOut {
+                from_contract,
+                to_contract,
+                transferable,
+                target_chain,
+            });
         }
 
         /// This is the method that bridge-out invokes.
@@ -104,33 +142,12 @@ mod bridge_transfer_ontract {
                 "Can only pass contract AccoundIDs..."
             );
 
-            // This builds the call.
-            build_call::<DefaultEnvironment>()
-                .call_type(
-                    Call::new()
-                        .callee(to_contract) // specify the callee
-                        .gas_limit(0), // specify the gas limit, similar to gas limit in EVM
-                )
-                .exec_input(
-                    ExecutionInput::new(Selector::new(
-                        [0x44, 0xff, 0x23, 0x12], // this is the selector of bridge_in
-                    ))
-                    .push_arg(from_contract) // First arg
-                    .push_arg(target_chain.clone()) // Second arg
-                    .push_arg(transferable.clone()), // Third arg
-                )
-                .returns::<()>() // No return
-                .fire()
-                .unwrap();
-
-            // Now we emit the event in peace!
-
-            Self::env().emit_event(BridgeOut {
+            Self::build_and_fire_call_and_emit(
                 from_contract,
                 to_contract,
-                transferable,
                 target_chain,
-            });
+                transferable,
+            );
         }
 
         /// As we said this is identical to the other function except it does not
@@ -149,24 +166,12 @@ mod bridge_transfer_ontract {
                 "Can only pass contract AccoundIDs..."
             );
 
-            build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(to_contract).gas_limit(0))
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
-                        .push_arg(from_contract)
-                        .push_arg(target_chain.clone())
-                        .push_arg(transferable.clone()),
-                )
-                .returns::<()>()
-                .fire()
-                .unwrap();
-
-            Self::env().emit_event(BridgeOut {
+            Self::build_and_fire_call_and_emit(
                 from_contract,
                 to_contract,
-                transferable,
                 target_chain,
-            });
+                transferable,
+            );
         }
 
         /// As we said this is identical to the other function except it does not
@@ -180,24 +185,12 @@ mod bridge_transfer_ontract {
         ) {
             let to_contract = self.env().account_id();
 
-            build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(to_contract).gas_limit(0))
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
-                        .push_arg(from_contract)
-                        .push_arg(target_chain.clone())
-                        .push_arg(transferable.clone()),
-                )
-                .returns::<()>()
-                .fire()
-                .unwrap();
-
-            Self::env().emit_event(BridgeOut {
+            Self::build_and_fire_call_and_emit(
                 from_contract,
                 to_contract,
-                transferable,
                 target_chain,
-            });
+                transferable,
+            );
         }
 
         /// As we said this is identical to the other function except it does not
@@ -207,24 +200,12 @@ mod bridge_transfer_ontract {
             let to_contract = self.env().account_id();
             let from_contract = to_contract.clone();
 
-            build_call::<DefaultEnvironment>()
-                .call_type(Call::new().callee(to_contract).gas_limit(0))
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0x44, 0xff, 0x23, 0x12]))
-                        .push_arg(from_contract)
-                        .push_arg(target_chain.clone())
-                        .push_arg(transferable.clone()),
-                )
-                .returns::<()>()
-                .fire()
-                .unwrap();
-
-            Self::env().emit_event(BridgeOut {
+            Self::build_and_fire_call_and_emit(
                 from_contract,
                 to_contract,
-                transferable,
                 target_chain,
-            });
+                transferable,
+            );
         }
     }
 }
